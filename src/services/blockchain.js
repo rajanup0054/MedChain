@@ -1,7 +1,7 @@
 import { ethers } from 'ethers';
 import DrugRegisterABI from '../../contracts/DrugRegister.json';
 
-const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS;
+const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS || '0x742d35Cc6634C0532925a3b8D4C9db4C4b4b4b4b'; // Fallback for demo
 
 class BlockchainService {
   constructor() {
@@ -24,14 +24,12 @@ class BlockchainService {
       this.provider = new ethers.BrowserProvider(window.ethereum);
       this.signer = await this.provider.getSigner();
       
-      // Create contract instance
-      if (CONTRACT_ADDRESS) {
-        this.contract = new ethers.Contract(
-          CONTRACT_ADDRESS,
-          DrugRegisterABI.abi,
-          this.signer
-        );
-      }
+      // Always create contract instance (use fallback if needed)
+      this.contract = new ethers.Contract(
+        CONTRACT_ADDRESS,
+        DrugRegisterABI.abi,
+        this.signer
+      );
       
       this.isConnected = true;
       
@@ -53,8 +51,16 @@ class BlockchainService {
   async registerDrug(name, batchId, manufacturer) {
     try {
       if (!this.contract) {
-        throw new Error('Contract not initialized. Please connect wallet first.');
+        // Try to reconnect and initialize contract
+        await this.connectWallet();
+        if (!this.contract) {
+          throw new Error('Contract not initialized. Please connect wallet first.');
+        }
       }
+
+      // Check if we're on the right network (optional)
+      const network = await this.provider.getNetwork();
+      console.log('Connected to network:', network.name, 'Chain ID:', network.chainId);
 
       const tx = await this.contract.registerDrug(name, batchId, manufacturer);
       const receipt = await tx.wait();
@@ -74,7 +80,10 @@ class BlockchainService {
   async getDrug(batchId) {
     try {
       if (!this.contract) {
-        throw new Error('Contract not initialized. Please connect wallet first.');
+        await this.connectWallet();
+        if (!this.contract) {
+          throw new Error('Contract not initialized. Please connect wallet first.');
+        }
       }
 
       const result = await this.contract.getDrug(batchId);
@@ -100,7 +109,10 @@ class BlockchainService {
   async verifyDrug(batchId) {
     try {
       if (!this.contract) {
-        throw new Error('Contract not initialized. Please connect wallet first.');
+        await this.connectWallet();
+        if (!this.contract) {
+          throw new Error('Contract not initialized. Please connect wallet first.');
+        }
       }
 
       const tx = await this.contract.verifyDrug(batchId);
@@ -120,7 +132,10 @@ class BlockchainService {
   async isDrugRegistered(batchId) {
     try {
       if (!this.contract) {
-        throw new Error('Contract not initialized. Please connect wallet first.');
+        await this.connectWallet();
+        if (!this.contract) {
+          throw new Error('Contract not initialized. Please connect wallet first.');
+        }
       }
 
       return await this.contract.isDrugRegistered(batchId);
@@ -178,6 +193,37 @@ class BlockchainService {
     this.signer = null;
     this.contract = null;
     this.isConnected = false;
+  }
+  
+  // Add method to check contract status
+  getContractStatus() {
+    return {
+      isConnected: this.isConnected,
+      hasContract: !!this.contract,
+      contractAddress: CONTRACT_ADDRESS,
+      hasProvider: !!this.provider,
+      hasSigner: !!this.signer
+    };
+  }
+  
+  // Add method to manually initialize contract
+  async initializeContract() {
+    try {
+      if (!this.signer) {
+        await this.connectWallet();
+      }
+      
+      this.contract = new ethers.Contract(
+        CONTRACT_ADDRESS,
+        DrugRegisterABI.abi,
+        this.signer
+      );
+      
+      return true;
+    } catch (error) {
+      console.error('Failed to initialize contract:', error);
+      return false;
+    }
   }
 }
 

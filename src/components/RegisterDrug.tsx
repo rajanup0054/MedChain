@@ -13,6 +13,7 @@ const RegisterDrug: React.FC = () => {
   const [isRegistering, setIsRegistering] = useState(false);
   const [registrationResult, setRegistrationResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [contractStatus, setContractStatus] = useState<any>(null);
 
   const handleConnectWallet = async () => {
     setIsConnecting(true);
@@ -21,6 +22,7 @@ const RegisterDrug: React.FC = () => {
     try {
       const info = await blockchainService.connectWallet();
       setWalletInfo(info);
+      setContractStatus(blockchainService.getContractStatus());
       blockchainService.setupEventListeners();
     } catch (err: any) {
       setError(err.message || 'Failed to connect wallet');
@@ -43,6 +45,18 @@ const RegisterDrug: React.FC = () => {
     setRegistrationResult(null);
 
     try {
+      // Check contract status before proceeding
+      const status = blockchainService.getContractStatus();
+      console.log('Contract status:', status);
+      
+      if (!status.hasContract) {
+        console.log('Initializing contract...');
+        const initialized = await blockchainService.initializeContract();
+        if (!initialized) {
+          throw new Error('Failed to initialize smart contract. Please check your network connection.');
+        }
+      }
+
       const result = await blockchainService.registerDrug(
         formData.name,
         formData.batchId,
@@ -104,6 +118,14 @@ const RegisterDrug: React.FC = () => {
                   <p className="text-sm text-green-700">
                     Balance: {parseFloat(walletInfo.balance).toFixed(4)} ETH
                   </p>
+                  {contractStatus && (
+                    <p className="text-xs text-green-600 mt-1">
+                      Contract: {contractStatus.hasContract ? '✅ Ready' : '❌ Not initialized'}
+                      {contractStatus.contractAddress && (
+                        <span className="ml-2">({contractStatus.contractAddress.substring(0, 8)}...)</span>
+                      )}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -213,6 +235,7 @@ const RegisterDrug: React.FC = () => {
         <ol className="list-decimal list-inside space-y-2 text-blue-800">
           <li>Connect your MetaMask wallet to the Ethereum network</li>
           <li>Ensure you have sufficient ETH for gas fees</li>
+          <li>Make sure you're connected to the correct network (Sepolia testnet recommended)</li>
           <li>Fill in the drug details (name, batch ID, manufacturer)</li>
           <li>Click "Register Drug" and confirm the transaction in MetaMask</li>
           <li>Wait for blockchain confirmation (usually 1-2 minutes)</li>
@@ -220,6 +243,9 @@ const RegisterDrug: React.FC = () => {
         <p className="mt-4 text-sm text-blue-700">
           <strong>Note:</strong> Each drug registration creates a permanent, immutable record on the blockchain
           that can be verified by anyone in the supply chain.
+        </p>
+        <p className="mt-2 text-sm text-blue-700">
+          <strong>Troubleshooting:</strong> If you see "Contract not initialized", try refreshing the page and reconnecting your wallet.
         </p>
       </div>
     </div>
