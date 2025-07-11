@@ -100,8 +100,27 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="bg-red-50 border border-red-200 rounded-md p-6">
+        <div className="flex items-center">
+          <ExclamationTriangleIcon className="h-5 w-5 text-red-400 mr-2" />
+          <h3 className="text-lg font-medium text-red-800">Database Setup Required</h3>
+        </div>
+        <div className="mt-2">
+          <p className="text-red-700">{error}</p>
+          <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+            <h4 className="font-medium text-yellow-800">Setup Instructions:</h4>
+            <ol className="mt-2 text-sm text-yellow-700 list-decimal list-inside space-y-1">
+              <li>Click "Connect to Supabase" in the top right corner</li>
+              <li>Create a new Supabase project</li>
+              <li>Copy your project URL and API keys</li>
+              <li>Run the database migrations in SQL Editor</li>
+              <li>Refresh this page</li>
+            </ol>
+            <p className="mt-2 text-sm text-yellow-600">
+              See <code>SUPABASE_SETUP.md</code> for detailed instructions.
+            </p>
+          </div>
+        </div>
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <div className="flex items-center">
             <Package className="h-8 w-8 text-blue-600" />

@@ -48,8 +48,14 @@ const AlertsPanel: React.FC = () => {
             {[1, 2, 3].map((i) => (
               <div key={i} className="h-16 bg-gray-200 rounded"></div>
             ))}
-          </div>
+      <div className="bg-red-50 border border-red-200 rounded-md p-4">
+        <div className="flex items-center">
+          <ExclamationTriangleIcon className="h-4 w-4 text-red-400 mr-2" />
+          <p className="text-red-800">Database Setup Required</p>
         </div>
+        <p className="text-sm text-red-600 mt-1">
+          Please set up Supabase database first. See SUPABASE_SETUP.md for instructions.
+        </p>
       </div>
     );
   }

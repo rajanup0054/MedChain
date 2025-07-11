@@ -30,13 +30,34 @@ export function useMedicines() {
   const fetchMedicines = async () => {
     try {
       setLoading(true);
+      
+      // Check if tables exist first
       const { data, error } = await supabase
+        .from('medicines')
+        if (error.code === '42P01') {
+          // Table doesn't exist
+          setError('Database not set up. Please follow the Supabase setup instructions.');
+          console.error('Supabase tables not created. Please run the database migrations.');
+        } else {
+          console.error('Error fetching medicines:', error);
+          setError(error.message);
+        }
+        .limit(1);
+
+      if (error) throw error;
+      // If successful, fetch all medicines
+      const { data: allMedicines, error: fetchError } = await supabase
         .from('medicines')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setMedicines(data || []);
+      if (fetchError) {
+        console.error('Error fetching all medicines:', fetchError);
+        setError(fetchError.message);
+        return;
+      }
+
+      setMedicines(allMedicines || []);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -159,21 +180,41 @@ export function useAlerts() {
   const fetchAlerts = async () => {
     try {
       setLoading(true);
+      
+      // First check if alerts table exists
       const { data, error } = await supabase
         .from('alerts')
         .select(`
           *,
           medicines (
-            name,
-            batch_id,
-            location
-          )
+        if (error.code === '42P01' || error.code === 'PGRST200') {
+          // Table doesn't exist or relationship not found
+          setError('Database not set up. Please follow the Supabase setup instructions.');
+          console.error('Supabase tables or relationships not created. Please run the database migrations.');
+        } else {
+          console.error('Error fetching alerts:', error);
+          setError(error.message);
+        }
+        .limit(1);
+
+      if (error) throw error;
+      // If successful, fetch all alerts with relationships
+      const { data: allAlerts, error: fetchError } = await supabase
+        .from('alerts')
+        .select(`
+          *,
+          medicines(name, batch_id, location)
         `)
         .eq('is_resolved', false)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setAlerts(data || []);
+      if (fetchError) {
+        console.error('Error fetching all alerts:', fetchError);
+        setError(fetchError.message);
+        return;
+      }
+
+      setAlerts(allAlerts || []);
     } catch (err: any) {
       setError(err.message);
     } finally {
