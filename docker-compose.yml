@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - DATABASE_URL=sqlite:///./data/medchain.db
+      - CORS_ORIGINS=http://localhost:5173,http://localhost:3000
+    volumes:
+      - ./backend/data:/app/data
+    restart: unless-stopped
+
+  frontend:
+    build: .
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_BACKEND_URL=http://localhost:8000
+      - VITE_GEMINI_API_KEY=${VITE_GEMINI_API_KEY}
+      - VITE_CONTRACT_ADDRESS=${VITE_CONTRACT_ADDRESS}
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  backend_data:
