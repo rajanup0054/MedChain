@@ -48,6 +48,14 @@ const AlertsPanel: React.FC = () => {
             {[1, 2, 3].map((i) => (
               <div key={i} className="h-16 bg-gray-200 rounded"></div>
             ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!alerts) {
+    return (
       <div className="bg-red-50 border border-red-200 rounded-md p-4">
         <div className="flex items-center">
           <ExclamationTriangleIcon className="h-4 w-4 text-red-400 mr-2" />
