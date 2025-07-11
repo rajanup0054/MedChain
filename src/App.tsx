@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
+import AlertsPanel from './components/AlertsPanel';
+import ReordersPanel from './components/ReordersPanel';
 import BlockchainVerification from './components/BlockchainVerification';
 import NLPInterface from './components/NLPInterface';
 import LocationsView from './components/LocationsView';
@@ -28,6 +30,10 @@ function App() {
         return <NLPInterface />;
       case 'locations':
         return <LocationsView />;
+      case 'alerts':
+        return <AlertsPanel />;
+      case 'reorders':
+        return <ReordersPanel />;
       case 'analytics':
         return (
           <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">

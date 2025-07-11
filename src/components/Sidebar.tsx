@@ -10,7 +10,9 @@ import {
   Package,
   Plus,
   Search,
-  Sparkles
+  Sparkles,
+  AlertTriangle,
+  ShoppingCart
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -27,6 +29,8 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
     { id: 'ai', label: 'AI Assistant', icon: Sparkles },
     { id: 'nlp', label: 'NLP Assistant', icon: MessageSquare },
     { id: 'locations', label: 'Locations', icon: MapPin },
+    { id: 'alerts', label: 'Alerts', icon: AlertTriangle },
+    { id: 'reorders', label: 'Reorders', icon: ShoppingCart },
     { id: 'analytics', label: 'Analytics', icon: TrendingUp },
     { id: 'inventory', label: 'Inventory', icon: Package },
     { id: 'settings', label: 'Settings', icon: Settings },
