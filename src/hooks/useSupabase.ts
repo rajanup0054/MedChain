@@ -204,6 +204,7 @@ export function useAlerts() {
         .select(`
           *,
           medicines(name, batch_id, location)
+        )
         `)
         .eq('is_resolved', false)
         .order('created_at', { ascending: false });
@@ -319,4 +320,7 @@ export function useReorders() {
   };
 
   return { reorders, loading, error, createReorder, updateReorderStatus, refetch: fetchReorders };
+}
+    }
+  }
 }
