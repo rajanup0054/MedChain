@@ -34,6 +34,10 @@ export function useMedicines() {
       // Check if tables exist first
       const { data, error } = await supabase
         .from('medicines')
+        .select('id')
+        .limit(1);
+
+      if (error) {
         if (error.code === '42P01') {
           // Table doesn't exist
           setError('Database not set up. Please follow the Supabase setup instructions.');
@@ -42,9 +46,9 @@ export function useMedicines() {
           console.error('Error fetching medicines:', error);
           setError(error.message);
         }
-        .limit(1);
-
-      if (error) throw error;
+        return;
+      }
+      
       // If successful, fetch all medicines
       const { data: allMedicines, error: fetchError } = await supabase
         .from('medicines')
@@ -184,9 +188,10 @@ export function useAlerts() {
       // First check if alerts table exists
       const { data, error } = await supabase
         .from('alerts')
-        .select(`
-          *,
-          medicines (
+        .select('id')
+        .limit(1);
+
+      if (error) {
         if (error.code === '42P01' || error.code === 'PGRST200') {
           // Table doesn't exist or relationship not found
           setError('Database not set up. Please follow the Supabase setup instructions.');
@@ -195,16 +200,15 @@ export function useAlerts() {
           console.error('Error fetching alerts:', error);
           setError(error.message);
         }
-        .limit(1);
-
-      if (error) throw error;
+        return;
+      }
+      
       // If successful, fetch all alerts with relationships
       const { data: allAlerts, error: fetchError } = await supabase
         .from('alerts')
         .select(`
           *,
           medicines(name, batch_id, location)
-        )
         `)
         .eq('is_resolved', false)
         .order('created_at', { ascending: false });
