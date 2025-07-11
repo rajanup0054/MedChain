@@ -1,7 +1,7 @@
 import { ethers } from 'ethers';
 import DrugRegisterABI from '../../contracts/DrugRegister.json';
 
-const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS || '0x742d35Cc6634C0532925a3b8D4C9db4C4b4b4b4b'; // Fallback for demo
+const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS || '0xD4763eD0b2AC82A5fF322715869743C28a98aB52'; // Fallback for demo
 
 class BlockchainService {
   constructor() {
