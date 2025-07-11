@@ -530,31 +530,48 @@ async def ai_chat(chat: ChatMessage):
         user_message = chat.message
         language = chat.language
         
+        # Enhanced context for medical supply chain
+        medical_context = f"""
+        You are an intelligent healthcare supply chain AI assistant for MedChain platform.
+        Current system status: Online and monitoring {len(mockDrugs)} drug types across multiple locations.
+        
+        User question ({language}): {user_message}
+        
+        You have access to real-time data for:
+        - Drug inventory management across hospitals, clinics, and pharmacies
+        - Expiry date monitoring and alerts
+        - Low stock detection and automatic reorder triggers
+        - Supply chain optimization and demand forecasting
+        - Drug authentication via blockchain verification
+        - Multi-location inventory tracking and transfers
+        - Batch verification and safety compliance
+        - Regulatory compliance and reporting
+        
+        Current inventory snapshot:
+        - Total drugs in system: {len(mockDrugs)}
+        - Locations monitored: {len(set(drug['location'] for drug in [
+            {"location": "Central Hospital"}, {"location": "Rural Clinic A"}, 
+            {"location": "City Pharmacy"}, {"location": "Regional Hospital"}
+        ]))}
+        - Critical stock alerts: Active monitoring
+        
+        Response guidelines:
+        1. Provide actionable, specific information
+        2. Include relevant numbers and data points
+        3. Suggest immediate actions when needed
+        4. Use medical terminology appropriately
+        5. Prioritize patient safety in all recommendations
+        6. If asked in Hindi/Bengali, respond in that language
+        7. Use emojis and formatting for clarity
+        
+        For inventory queries, provide specific stock numbers.
+        For expiry queries, give exact dates and urgency levels.
+        For reorder suggestions, include quantities and timelines.
+        For verification queries, confirm authenticity status.
+        """
+        
         if model:
-            # Use Gemini AI
-            healthcare_prompt = f"""
-            You are an intelligent healthcare supply chain AI assistant for MedChain platform.
-            User question: {user_message}
-            Response language: {language}
-            
-            You have access to real-time inventory data and can provide insights about:
-            - Drug inventory management
-            - Expiry date monitoring
-            - Low stock alerts and reorder automation
-            - Supply chain optimization
-            - Demand forecasting
-            - Drug authentication and safety
-            - Healthcare logistics
-            - Batch verification
-            - Multi-location inventory tracking
-            
-            Provide helpful, accurate, and actionable information. Use emojis and formatting to make responses clear and engaging.
-            Keep responses professional and focused on healthcare supply chain management.
-            
-            If the user asks in a language other than English, respond in that same language.
-            """
-            
-            response = model.generate_content(healthcare_prompt)
+            response = model.generate_content(medical_context)
             return {
                 "response": response.text,
                 "language": language,
@@ -564,7 +581,7 @@ async def ai_chat(chat: ChatMessage):
         else:
             # Mock response
             return {
-                "response": "I'm your intelligent MedChain AI assistant. I can help with inventory management, expiry monitoring, demand forecasting, and supply chain optimization. However, the AI service is currently unavailable. Please check your API configuration.",
+                "response": f"I'm your intelligent MedChain AI assistant. I can help with inventory management, expiry monitoring, demand forecasting, and supply chain optimization. Try asking: 'List expired medicines', 'Show low stock alerts', or 'Weekly inventory summary'. Language: {language}",
                 "language": language,
                 "timestamp": datetime.now().isoformat(),
                 "source": "mock_response"
