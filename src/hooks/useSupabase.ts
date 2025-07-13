@@ -167,6 +167,19 @@ export function useAlerts() {
       setError(null);
       
       // First check if tables exist by trying a simple query
+      
+      // Check if alerts table exists first
+      const { error: tableCheckError } = await supabase
+        .from('alerts')
+        .select('id')
+        .limit(1);
+      
+      if (tableCheckError?.code === '42P01') {
+        setError('Database tables not found. Please run the Supabase migrations.');
+        setLoading(false);
+        return;
+      }
+      
       const { data, error } = await supabase
         .from('alerts')
         .select('*')

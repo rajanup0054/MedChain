@@ -4,7 +4,7 @@ import { useMedicines, useLocations, useAlerts } from '../hooks/useSupabase';
 import { Medicine } from '../lib/supabase';
 
 const Dashboard: React.FC = () => {
-  const { medicines, loading: medicinesLoading, addMedicine, updateMedicine, deleteMedicine } = useMedicines();
+  const { medicines, loading: medicinesLoading, addMedicine, updateMedicine, deleteMedicine, error } = useMedicines();
   const { locations } = useLocations();
   const { alerts } = useAlerts();
   const [selectedLocation, setSelectedLocation] = useState('all');
