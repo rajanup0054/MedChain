@@ -58,7 +58,7 @@ const AlertsPanel: React.FC = () => {
     return (
       <div className="bg-red-50 border border-red-200 rounded-md p-4">
         <div className="flex items-center">
-          <ExclamationTriangleIcon className="h-4 w-4 text-red-400 mr-2" />
+          <AlertTriangle className="h-4 w-4 text-red-400 mr-2" />
           <p className="text-red-800">Database Setup Required</p>
         </div>
         <p className="text-sm text-red-600 mt-1">

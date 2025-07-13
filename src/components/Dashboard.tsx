@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Package, TrendingUp, AlertTriangle, MapPin, Activity, Clock, Plus, Edit, Trash2 } from 'lucide-react';
+import { Package, TrendingUp, AlertTriangle, MapPin, Activity, Clock, Plus, Edit, Trash2, ExclamationTriangle } from 'lucide-react';
 import { useMedicines, useLocations, useAlerts } from '../hooks/useSupabase';
 import { Medicine } from '../lib/supabase';
 
@@ -102,7 +102,7 @@ const Dashboard: React.FC = () => {
     <div className="space-y-6">
       <div className="bg-red-50 border border-red-200 rounded-md p-6">
         <div className="flex items-center">
-          <ExclamationTriangleIcon className="h-5 w-5 text-red-400 mr-2" />
+          <ExclamationTriangle className="h-5 w-5 text-red-400 mr-2" />
           <h3 className="text-lg font-medium text-red-800">Database Setup Required</h3>
         </div>
         <div className="mt-2">

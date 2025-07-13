@@ -133,7 +133,7 @@ export function useLocations() {
       setLocations(data || []);
     } catch (err: any) {
       console.error('Error fetching locations:', err);
-      if (err.code === '42P01') {
+      if (err.code === '42P01' || err.message?.includes('does not exist')) {
         setError('Database tables not found. Please set up Supabase first.');
       } else {
         setError(err.message);
@@ -166,16 +166,10 @@ export function useAlerts() {
       setLoading(true);
       setError(null);
       
+      // First check if tables exist by trying a simple query
       const { data, error } = await supabase
         .from('alerts')
-        .select(`
-          *,
-          medicines (
-            name,
-            batch_id,
-            location
-          )
-        `)
+        .select('*')
         .eq('is_resolved', false)
         .order('created_at', { ascending: false });
 
@@ -183,8 +177,9 @@ export function useAlerts() {
       setAlerts(data || []);
     } catch (err: any) {
       console.error('Error fetching alerts:', err);
-      if (err.code === '42P01' || err.code === 'PGRST200') {
+      if (err.code === '42P01' || err.code === 'PGRST200' || err.message?.includes('does not exist') || err.message?.includes('relationship')) {
         setError('Database tables not found. Please set up Supabase first.');
+        setAlerts([]);
       } else {
         setError(err.message);
       }
@@ -248,24 +243,19 @@ export function useReorders() {
       setLoading(true);
       setError(null);
       
+      // First check if tables exist by trying a simple query
       const { data, error } = await supabase
         .from('reorders')
-        .select(`
-          *,
-          medicines (
-            name,
-            batch_id,
-            location
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       setReorders(data || []);
     } catch (err: any) {
       console.error('Error fetching reorders:', err);
-      if (err.code === '42P01' || err.code === 'PGRST200') {
+      if (err.code === '42P01' || err.code === 'PGRST200' || err.message?.includes('does not exist') || err.message?.includes('relationship')) {
         setError('Database tables not found. Please set up Supabase first.');
+        setReorders([]);
       } else {
         setError(err.message);
       }
@@ -327,13 +317,13 @@ export function useDatabaseSetup() {
     try {
       setLoading(true);
       
-      // Try to query a simple table to check if database is set up
+      // Try to query the medicines table to check if database is set up
       const { error } = await supabase
         .from('medicines')
         .select('id')
         .limit(1);
 
-      setIsSetup(!error);
+      setIsSetup(!error || error.code !== '42P01');
     } catch (err) {
       setIsSetup(false);
     } finally {
