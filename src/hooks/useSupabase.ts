@@ -13,6 +13,19 @@ export function useMedicines() {
       setLoading(true);
       setError(null);
       
+      // Check if tables exist first
+      const { error: tableCheckError } = await supabase
+        .from('medicines')
+        .select('id')
+        .limit(1);
+      
+      if (tableCheckError?.code === '42P01') {
+        setError('Database tables not found. Please set up Supabase first.');
+        setMedicines([]);
+        setLoading(false);
+        return;
+      }
+      
       const { data, error } = await supabase
         .from('medicines')
         .select('*')
@@ -24,6 +37,7 @@ export function useMedicines() {
       console.error('Error fetching medicines:', err);
       if (err.code === '42P01') {
         setError('Database tables not found. Please set up Supabase first.');
+        setMedicines([]);
       } else {
         setError(err.message);
       }
