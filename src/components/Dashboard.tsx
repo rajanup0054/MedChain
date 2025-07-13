@@ -98,8 +98,8 @@ const Dashboard: React.FC = () => {
     );
   }
 
-  return (
-    <div className="space-y-6">
+  if (error) {
+    return (
       <div className="bg-red-50 border border-red-200 rounded-md p-6">
         <div className="flex items-center">
           <ExclamationTriangle className="h-5 w-5 text-red-400 mr-2" />
@@ -121,6 +121,14 @@ const Dashboard: React.FC = () => {
             </p>
           </div>
         </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <div className="flex items-center">
             <Package className="h-8 w-8 text-blue-600" />
