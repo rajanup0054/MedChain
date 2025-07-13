@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Package, TrendingUp, AlertTriangle, MapPin, Activity, Clock, Plus, Edit, Trash2, ExclamationTriangle } from 'lucide-react';
+import { Package, TrendingUp, AlertTriangle, MapPin, Activity, Clock, Plus, Edit, Trash2, Triangle as ExclamationTriangle } from 'lucide-react';
 import { useMedicines, useLocations, useAlerts } from '../hooks/useSupabase';
 import { Medicine } from '../lib/supabase';
 
