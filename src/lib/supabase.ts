@@ -3,11 +3,11 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables. Please check your .env file.');
-}
+// Check if Supabase is configured
+const isSupabaseConfigured = supabaseUrl && supabaseAnonKey;
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+// Create client only if configured, otherwise use null
+export const supabase = isSupabaseConfigured ? createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
@@ -18,7 +18,10 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       eventsPerSecond: 10
     }
   }
-});
+}) : null;
+
+// Export configuration status
+export const isSupabaseReady = isSupabaseConfigured;
 
 // Database types
 export interface Medicine {
