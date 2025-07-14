@@ -103,18 +103,34 @@ const Dashboard: React.FC = () => {
       <div className="bg-red-50 border border-red-200 rounded-md p-6">
         <div className="flex items-center">
           <ExclamationTriangle className="h-5 w-5 text-red-400 mr-2" />
-          <h3 className="text-lg font-medium text-red-800">Database Setup Required</h3>
+          <h3 className="text-lg font-medium text-red-800">
+            {error.includes('not configured') ? 'Supabase Configuration Required' : 'Database Setup Required'}
+          </h3>
         </div>
         <div className="mt-2">
           <p className="text-red-700">{error}</p>
           <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
-            <h4 className="font-medium text-yellow-800">Setup Instructions:</h4>
+            <h4 className="font-medium text-yellow-800">
+              {error.includes('not configured') ? 'Configuration Steps:' : 'Setup Instructions:'}
+            </h4>
             <ol className="mt-2 text-sm text-yellow-700 list-decimal list-inside space-y-1">
-              <li>Click "Connect to Supabase" in the top right corner</li>
-              <li>Create a new Supabase project</li>
-              <li>Copy your project URL and API keys</li>
-              <li>Run the database migrations in SQL Editor</li>
-              <li>Refresh this page</li>
+              {error.includes('not configured') ? (
+                <>
+                  <li>Create a <code>.env</code> file in your project root</li>
+                  <li>Add your Supabase URL: <code>VITE_SUPABASE_URL=https://your-project.supabase.co</code></li>
+                  <li>Add your Supabase anon key: <code>VITE_SUPABASE_ANON_KEY=your-anon-key</code></li>
+                  <li>Restart your development server</li>
+                  <li>Run the database migrations in Supabase SQL Editor</li>
+                </>
+              ) : (
+                <>
+                  <li>Click "Connect to Supabase" in the top right corner</li>
+                  <li>Create a new Supabase project</li>
+                  <li>Copy your project URL and API keys</li>
+                  <li>Run the database migrations in SQL Editor</li>
+                  <li>Refresh this page</li>
+                </>
+              )}
             </ol>
             <p className="mt-2 text-sm text-yellow-600">
               See <code>SUPABASE_SETUP.md</code> for detailed instructions.
