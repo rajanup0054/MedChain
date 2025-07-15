@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase, isSupabaseReady } from '../lib/supabase';
-import type { Medicine, Location, Alert, Reorder } from '../types';
+import type { Medicine, Location, Alert, Reorder } from '../lib/supabase';
 
 // Hook for managing medicines
 export function useMedicines() {
@@ -28,7 +28,7 @@ export function useMedicines() {
         .limit(1);
       
       if (tableCheckError?.code === '42P01') {
-        setError('Database tables not found. Please set up Supabase first.');
+        setError('Database tables not found. Please run the database migrations.');
         setMedicines([]);
         setLoading(false);
         return;
@@ -44,7 +44,10 @@ export function useMedicines() {
     } catch (err: any) {
       console.error('Error fetching medicines:', err);
       if (err.code === '42P01') {
-        setError('Database tables not found. Please set up Supabase first.');
+        setError('Database tables not found. Please run the database migrations.');
+        setMedicines([]);
+      } else if (err.message?.includes('Failed to fetch')) {
+        setError('Cannot connect to Supabase. Please check your configuration.');
         setMedicines([]);
       } else {
         setError(err.message);
@@ -56,6 +59,8 @@ export function useMedicines() {
 
   const addMedicine = async (medicine: Omit<Medicine, 'id' | 'created_at' | 'updated_at'>) => {
     try {
+      if (!supabase) throw new Error('Supabase not configured');
+      
       const { data, error } = await supabase
         .from('medicines')
         .insert([medicine])
@@ -73,6 +78,8 @@ export function useMedicines() {
 
   const updateMedicine = async (id: string, updates: Partial<Medicine>) => {
     try {
+      if (!supabase) throw new Error('Supabase not configured');
+      
       const { data, error } = await supabase
         .from('medicines')
         .update(updates)
@@ -91,6 +98,8 @@ export function useMedicines() {
 
   const deleteMedicine = async (id: string) => {
     try {
+      if (!supabase) throw new Error('Supabase not configured');
+      
       const { error } = await supabase
         .from('medicines')
         .delete()
@@ -107,21 +116,23 @@ export function useMedicines() {
   useEffect(() => {
     fetchMedicines();
 
-    // Set up real-time subscription
-    const subscription = supabase
-      .channel('medicines_changes')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'medicines' },
-        (payload) => {
-          console.log('Medicine change received:', payload);
-          fetchMedicines(); // Refetch data on any change
-        }
-      )
-      .subscribe();
+    // Set up real-time subscription only if Supabase is ready
+    if (isSupabaseReady && supabase) {
+      const subscription = supabase
+        .channel('medicines_changes')
+        .on('postgres_changes', 
+          { event: '*', schema: 'public', table: 'medicines' },
+          (payload) => {
+            console.log('Medicine change received:', payload);
+            fetchMedicines(); // Refetch data on any change
+          }
+        )
+        .subscribe();
 
-    return () => {
-      subscription.unsubscribe();
-    };
+      return () => {
+        subscription.unsubscribe();
+      };
+    }
   }, []);
 
   return {
@@ -159,12 +170,19 @@ export function useLocations() {
         .select('*')
         .order('name');
 
-      if (error) throw error;
-      setLocations(data || []);
+      if (error) {
+        if (error.code === '42P01') {
+          setError('Database tables not found. Please run the database migrations.');
+        } else {
+          throw error;
+        }
+      } else {
+        setLocations(data || []);
+      }
     } catch (err: any) {
       console.error('Error fetching locations:', err);
-      if (err.code === '42P01' || err.message?.includes('does not exist')) {
-        setError('Database tables not found. Please set up Supabase first.');
+      if (err.message?.includes('Failed to fetch')) {
+        setError('Cannot connect to Supabase. Please check your configuration.');
       } else {
         setError(err.message);
       }
@@ -204,33 +222,25 @@ export function useAlerts() {
         return;
       }
       
-      // First check if tables exist by trying a simple query
-      
-      // Check if alerts table exists first
-      const { error: tableCheckError } = await supabase
-        .from('alerts')
-        .select('id')
-        .limit(1);
-      
-      if (tableCheckError?.code === '42P01') {
-        setError('Database tables not found. Please run the Supabase migrations.');
-        setLoading(false);
-        return;
-      }
-      
       const { data, error } = await supabase
         .from('alerts')
         .select('*')
         .eq('is_resolved', false)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setAlerts(data || []);
+      if (error) {
+        if (error.code === '42P01') {
+          setError('Database tables not found. Please run the database migrations.');
+        } else {
+          throw error;
+        }
+      } else {
+        setAlerts(data || []);
+      }
     } catch (err: any) {
       console.error('Error fetching alerts:', err);
-      if (err.code === '42P01' || err.code === 'PGRST200' || err.message?.includes('does not exist') || err.message?.includes('relationship')) {
-        setError('Database tables not found. Please set up Supabase first.');
-        setAlerts([]);
+      if (err.message?.includes('Failed to fetch')) {
+        setError('Cannot connect to Supabase. Please check your configuration.');
       } else {
         setError(err.message);
       }
@@ -241,6 +251,8 @@ export function useAlerts() {
 
   const resolveAlert = async (id: string) => {
     try {
+      if (!supabase) throw new Error('Supabase not configured');
+      
       const { error } = await supabase
         .from('alerts')
         .update({ is_resolved: true, resolved_at: new Date().toISOString() })
@@ -257,21 +269,23 @@ export function useAlerts() {
   useEffect(() => {
     fetchAlerts();
 
-    // Set up real-time subscription
-    const subscription = supabase
-      .channel('alerts_changes')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'alerts' },
-        (payload) => {
-          console.log('Alert change received:', payload);
-          fetchAlerts(); // Refetch data on any change
-        }
-      )
-      .subscribe();
+    // Set up real-time subscription only if Supabase is ready
+    if (isSupabaseReady && supabase) {
+      const subscription = supabase
+        .channel('alerts_changes')
+        .on('postgres_changes', 
+          { event: '*', schema: 'public', table: 'alerts' },
+          (payload) => {
+            console.log('Alert change received:', payload);
+            fetchAlerts(); // Refetch data on any change
+          }
+        )
+        .subscribe();
 
-    return () => {
-      subscription.unsubscribe();
-    };
+      return () => {
+        subscription.unsubscribe();
+      };
+    }
   }, []);
 
   return {
@@ -302,19 +316,24 @@ export function useReorders() {
         return;
       }
       
-      // First check if tables exist by trying a simple query
       const { data, error } = await supabase
         .from('reorders')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setReorders(data || []);
+      if (error) {
+        if (error.code === '42P01') {
+          setError('Database tables not found. Please run the database migrations.');
+        } else {
+          throw error;
+        }
+      } else {
+        setReorders(data || []);
+      }
     } catch (err: any) {
       console.error('Error fetching reorders:', err);
-      if (err.code === '42P01' || err.code === 'PGRST200' || err.message?.includes('does not exist') || err.message?.includes('relationship')) {
-        setError('Database tables not found. Please set up Supabase first.');
-        setReorders([]);
+      if (err.message?.includes('Failed to fetch')) {
+        setError('Cannot connect to Supabase. Please check your configuration.');
       } else {
         setError(err.message);
       }
@@ -325,6 +344,8 @@ export function useReorders() {
 
   const updateReorderStatus = async (id: string, status: string) => {
     try {
+      if (!supabase) throw new Error('Supabase not configured');
+      
       const { error } = await supabase
         .from('reorders')
         .update({ status })
@@ -341,21 +362,23 @@ export function useReorders() {
   useEffect(() => {
     fetchReorders();
 
-    // Set up real-time subscription
-    const subscription = supabase
-      .channel('reorders_changes')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'reorders' },
-        (payload) => {
-          console.log('Reorder change received:', payload);
-          fetchReorders(); // Refetch data on any change
-        }
-      )
-      .subscribe();
+    // Set up real-time subscription only if Supabase is ready
+    if (isSupabaseReady && supabase) {
+      const subscription = supabase
+        .channel('reorders_changes')
+        .on('postgres_changes', 
+          { event: '*', schema: 'public', table: 'reorders' },
+          (payload) => {
+            console.log('Reorder change received:', payload);
+            fetchReorders(); // Refetch data on any change
+          }
+        )
+        .subscribe();
 
-    return () => {
-      subscription.unsubscribe();
-    };
+      return () => {
+        subscription.unsubscribe();
+      };
+    }
   }, []);
 
   return {

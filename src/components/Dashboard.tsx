@@ -4,9 +4,9 @@ import { useMedicines, useLocations, useAlerts } from '../hooks/useSupabase';
 import { Medicine } from '../lib/supabase';
 
 const Dashboard: React.FC = () => {
-  const { medicines, loading: medicinesLoading, addMedicine, updateMedicine, deleteMedicine, error } = useMedicines();
-  const { locations } = useLocations();
-  const { alerts } = useAlerts();
+  const { medicines, loading: medicinesLoading, addMedicine, updateMedicine, deleteMedicine, error: medicinesError } = useMedicines();
+  const { locations, error: locationsError } = useLocations();
+  const { alerts, error: alertsError } = useAlerts();
   const [selectedLocation, setSelectedLocation] = useState('all');
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingMedicine, setEditingMedicine] = useState<Medicine | null>(null);
@@ -19,6 +19,19 @@ const Dashboard: React.FC = () => {
     location: '',
     status: 'active' as const
   });
+
+  // Check for any configuration errors
+  const hasConfigError = medicinesError?.includes('not configured') || 
+                        locationsError?.includes('not configured') || 
+                        alertsError?.includes('not configured');
+
+  const hasDatabaseError = medicinesError?.includes('Database tables not found') ||
+                          locationsError?.includes('Database tables not found') ||
+                          alertsError?.includes('Database tables not found');
+
+  const hasConnectionError = medicinesError?.includes('Cannot connect to Supabase') ||
+                            locationsError?.includes('Cannot connect to Supabase') ||
+                            alertsError?.includes('Cannot connect to Supabase');
 
   const totalDrugs = medicines.length;
   const verifiedDrugs = medicines.filter(medicine => medicine.status === 'active').length;
@@ -98,43 +111,79 @@ const Dashboard: React.FC = () => {
     );
   }
 
-  if (error) {
+  // Show configuration error
+  if (hasConfigError) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-md p-6">
         <div className="flex items-center">
           <ExclamationTriangle className="h-5 w-5 text-red-400 mr-2" />
-          <h3 className="text-lg font-medium text-red-800">
-            {error.includes('not configured') ? 'Supabase Configuration Required' : 'Database Setup Required'}
-          </h3>
+          <h3 className="text-lg font-medium text-red-800">Supabase Configuration Required</h3>
         </div>
         <div className="mt-2">
-          <p className="text-red-700">{error}</p>
+          <p className="text-red-700">Supabase is not configured. Please set up your environment variables.</p>
           <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
-            <h4 className="font-medium text-yellow-800">
-              {error.includes('not configured') ? 'Configuration Steps:' : 'Setup Instructions:'}
-            </h4>
+            <h4 className="font-medium text-yellow-800">Configuration Steps:</h4>
             <ol className="mt-2 text-sm text-yellow-700 list-decimal list-inside space-y-1">
-              {error.includes('not configured') ? (
-                <>
-                  <li>Create a <code>.env</code> file in your project root</li>
-                  <li>Add your Supabase URL: <code>VITE_SUPABASE_URL=https://your-project.supabase.co</code></li>
-                  <li>Add your Supabase anon key: <code>VITE_SUPABASE_ANON_KEY=your-anon-key</code></li>
-                  <li>Restart your development server</li>
-                  <li>Run the database migrations in Supabase SQL Editor</li>
-                </>
-              ) : (
-                <>
-                  <li>Click "Connect to Supabase" in the top right corner</li>
-                  <li>Create a new Supabase project</li>
-                  <li>Copy your project URL and API keys</li>
-                  <li>Run the database migrations in SQL Editor</li>
-                  <li>Refresh this page</li>
-                </>
-              )}
+              <li>Create a <code>.env</code> file in your project root</li>
+              <li>Add your Supabase URL: <code>VITE_SUPABASE_URL=https://your-project.supabase.co</code></li>
+              <li>Add your Supabase anon key: <code>VITE_SUPABASE_ANON_KEY=your-anon-key</code></li>
+              <li>Restart your development server</li>
+              <li>Run the database migrations in Supabase SQL Editor</li>
             </ol>
             <p className="mt-2 text-sm text-yellow-600">
               See <code>SUPABASE_SETUP.md</code> for detailed instructions.
             </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show database setup error
+  if (hasDatabaseError) {
+    return (
+      <div className="bg-orange-50 border border-orange-200 rounded-md p-6">
+        <div className="flex items-center">
+          <ExclamationTriangle className="h-5 w-5 text-orange-400 mr-2" />
+          <h3 className="text-lg font-medium text-orange-800">Database Setup Required</h3>
+        </div>
+        <div className="mt-2">
+          <p className="text-orange-700">Database tables not found. Please run the database migrations.</p>
+          <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-md">
+            <h4 className="font-medium text-blue-800">Setup Instructions:</h4>
+            <ol className="mt-2 text-sm text-blue-700 list-decimal list-inside space-y-1">
+              <li>Go to your Supabase Dashboard → SQL Editor</li>
+              <li>Run the migration: <code>supabase/migrations/create_medicines_schema.sql</code></li>
+              <li>Run the sample data: <code>supabase/migrations/insert_sample_data.sql</code></li>
+              <li>Refresh this page</li>
+            </ol>
+            <p className="mt-2 text-sm text-blue-600">
+              The migration files are included in your project.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show connection error
+  if (hasConnectionError) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-md p-6">
+        <div className="flex items-center">
+          <ExclamationTriangle className="h-5 w-5 text-red-400 mr-2" />
+          <h3 className="text-lg font-medium text-red-800">Connection Error</h3>
+        </div>
+        <div className="mt-2">
+          <p className="text-red-700">Cannot connect to Supabase. Please check your configuration.</p>
+          <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+            <h4 className="font-medium text-yellow-800">Troubleshooting:</h4>
+            <ul className="mt-2 text-sm text-yellow-700 list-disc list-inside space-y-1">
+              <li>Check your internet connection</li>
+              <li>Verify your Supabase URL and API key are correct</li>
+              <li>Make sure your Supabase project is active</li>
+              <li>Check browser console for more details</li>
+            </ul>
           </div>
         </div>
       </div>
