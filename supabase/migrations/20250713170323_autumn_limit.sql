@@ -1,47 +1,3 @@
-/*
-  # Create MedChain Database Schema
-
-  1. New Tables
-    - `locations`
-      - `id` (uuid, primary key)
-      - `name` (text, unique)
-      - `address` (text)
-      - `type` (text)
-      - `created_at` (timestamp)
-    - `medicines`
-      - `id` (uuid, primary key)
-      - `name` (text)
-      - `batch_id` (text, unique)
-      - `manufacturer` (text)
-      - `expiry_date` (date)
-      - `quantity` (integer)
-      - `location_id` (uuid, foreign key)
-      - `price` (decimal)
-      - `description` (text)
-      - `created_at` (timestamp)
-      - `updated_at` (timestamp)
-    - `alerts`
-      - `id` (uuid, primary key)
-      - `type` (text)
-      - `message` (text)
-      - `medicine_id` (uuid, foreign key)
-      - `is_resolved` (boolean)
-      - `resolved_at` (timestamp)
-      - `created_at` (timestamp)
-    - `reorders`
-      - `id` (uuid, primary key)
-      - `medicine_id` (uuid, foreign key)
-      - `quantity` (integer)
-      - `status` (text)
-      - `supplier` (text)
-      - `expected_date` (date)
-      - `created_at` (timestamp)
-
-  2. Security
-    - Enable RLS on all tables
-    - Add policies for authenticated users to manage their data
-*/
-
 -- Create locations table
 CREATE TABLE IF NOT EXISTS locations (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -69,9 +25,9 @@ CREATE TABLE IF NOT EXISTS medicines (
 -- Create alerts table
 CREATE TABLE IF NOT EXISTS alerts (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  type text NOT NULL,
+  type text NOT NULL CHECK (type IN ('expiry', 'low_stock', 'out_of_stock', 'quality')),
   message text NOT NULL,
-  medicine_id uuid REFERENCES medicines(id),
+  medicine_id uuid REFERENCES medicines(id) ON DELETE CASCADE,
   is_resolved boolean DEFAULT false,
   resolved_at timestamptz,
   created_at timestamptz DEFAULT now()
@@ -80,9 +36,9 @@ CREATE TABLE IF NOT EXISTS alerts (
 -- Create reorders table
 CREATE TABLE IF NOT EXISTS reorders (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  medicine_id uuid REFERENCES medicines(id),
+  medicine_id uuid REFERENCES medicines(id) ON DELETE CASCADE,
   quantity integer NOT NULL,
-  status text DEFAULT 'pending',
+  status text DEFAULT 'pending' CHECK (status IN ('pending', 'ordered', 'shipped', 'delivered', 'cancelled')),
   supplier text,
   expected_date date,
   created_at timestamptz DEFAULT now()
@@ -142,6 +98,9 @@ BEGIN
   RETURN NEW;
 END;
 $$ language 'plpgsql';
+
+-- Prevent duplicate trigger errors
+DROP TRIGGER IF EXISTS update_medicines_updated_at ON medicines;
 
 -- Create trigger for medicines table
 CREATE TRIGGER update_medicines_updated_at
