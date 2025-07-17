@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Package, TrendingUp, AlertTriangle, MapPin, Activity, Clock, Plus, Edit, Trash2, Triangle as ExclamationTriangle } from 'lucide-react';
+import { Package, TrendingUp, AlertTriangle, MapPin, Activity, Clock, Plus, Edit, Trash2, Triangle as ExclamationTriangle, Eye, X, Calendar, Building, User, Barcode, DollarSign, FileText } from 'lucide-react';
 import { useMedicines, useLocations, useAlerts } from '../hooks/useSupabase';
 import { Medicine } from '../lib/supabase';
 
@@ -10,6 +10,8 @@ const Dashboard: React.FC = () => {
   const [selectedLocation, setSelectedLocation] = useState('all');
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingMedicine, setEditingMedicine] = useState<Medicine | null>(null);
+  const [selectedMedicine, setSelectedMedicine] = useState<Medicine | null>(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     batch_id: '',
@@ -101,6 +103,41 @@ const Dashboard: React.FC = () => {
         console.error('Error deleting medicine:', error);
       }
     }
+  };
+
+  const handleViewDetails = (medicine: Medicine) => {
+    setSelectedMedicine(medicine);
+    setShowDetailsModal(true);
+  };
+
+  const closeDetailsModal = () => {
+    setSelectedMedicine(null);
+    setShowDetailsModal(false);
+  };
+
+  const getStockStatus = (quantity: number) => {
+    if (quantity === 0) return { status: 'Out of Stock', color: 'text-red-600', bgColor: 'bg-red-50' };
+    if (quantity < 10) return { status: 'Critical', color: 'text-red-600', bgColor: 'bg-red-50' };
+    if (quantity < 50) return { status: 'Low Stock', color: 'text-yellow-600', bgColor: 'bg-yellow-50' };
+    if (quantity < 100) return { status: 'Moderate', color: 'text-blue-600', bgColor: 'bg-blue-50' };
+    return { status: 'Well Stocked', color: 'text-green-600', bgColor: 'bg-green-50' };
+  };
+
+  const getDaysUntilExpiry = (expiryDate: string) => {
+    const expiry = new Date(expiryDate);
+    const today = new Date();
+    const diffTime = expiry.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
+
+  const getExpiryStatus = (expiryDate: string) => {
+    const daysUntilExpiry = getDaysUntilExpiry(expiryDate);
+    
+    if (daysUntilExpiry < 0) return { status: 'Expired', color: 'text-red-600', bgColor: 'bg-red-50' };
+    if (daysUntilExpiry <= 7) return { status: 'Expires Soon', color: 'text-red-600', bgColor: 'bg-red-50' };
+    if (daysUntilExpiry <= 30) return { status: 'Expiring', color: 'text-yellow-600', bgColor: 'bg-yellow-50' };
+    return { status: 'Valid', color: 'text-green-600', bgColor: 'bg-green-50' };
   };
 
   if (medicinesLoading) {
@@ -410,14 +447,23 @@ const Dashboard: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
                       <button
+                        onClick={() => handleViewDetails(medicine)}
+                        className="text-blue-600 hover:text-blue-900"
+                        title="View Details"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </button>
+                      <button
                         onClick={() => handleEdit(medicine)}
                         className="text-blue-600 hover:text-blue-900"
+                        title="Edit Medicine"
                       >
                         <Edit className="h-4 w-4" />
                       </button>
                       <button
                         onClick={() => handleDelete(medicine.id)}
                         className="text-red-600 hover:text-red-900"
+                        title="Delete Medicine"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
@@ -429,6 +475,247 @@ const Dashboard: React.FC = () => {
           </table>
         </div>
       </div>
+
+      {/* Medicine Details Modal */}
+      {showDetailsModal && selectedMedicine && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <div className="flex items-center space-x-3">
+                <Package className="h-6 w-6 text-blue-600" />
+                <h2 className="text-xl font-bold text-gray-900">Medicine Stock Details</h2>
+              </div>
+              <button
+                onClick={closeDetailsModal}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6">
+              {/* Medicine Header */}
+              <div className="mb-6">
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">{selectedMedicine.name}</h3>
+                <div className="flex items-center space-x-4 text-sm text-gray-600">
+                  <span className="flex items-center">
+                    <Barcode className="h-4 w-4 mr-1" />
+                    Batch: {selectedMedicine.batch_id}
+                  </span>
+                  <span className="flex items-center">
+                    <Building className="h-4 w-4 mr-1" />
+                    {selectedMedicine.manufacturer}
+                  </span>
+                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(selectedMedicine.status)}`}>
+                    {selectedMedicine.status.replace('_', ' ')}
+                  </span>
+                </div>
+              </div>
+
+              {/* Stock Overview Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                {/* Current Stock */}
+                <div className={`p-4 rounded-lg border ${getStockStatus(selectedMedicine.quantity).bgColor}`}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Current Stock</p>
+                      <p className="text-2xl font-bold text-gray-900">{selectedMedicine.quantity.toLocaleString()}</p>
+                      <p className="text-sm text-gray-500">units</p>
+                    </div>
+                    <Package className={`h-8 w-8 ${getStockStatus(selectedMedicine.quantity).color}`} />
+                  </div>
+                  <div className="mt-2">
+                    <span className={`text-sm font-medium ${getStockStatus(selectedMedicine.quantity).color}`}>
+                      {getStockStatus(selectedMedicine.quantity).status}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Expiry Status */}
+                <div className={`p-4 rounded-lg border ${getExpiryStatus(selectedMedicine.expiry_date).bgColor}`}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Expiry Date</p>
+                      <p className="text-lg font-bold text-gray-900">
+                        {new Date(selectedMedicine.expiry_date).toLocaleDateString()}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {getDaysUntilExpiry(selectedMedicine.expiry_date)} days remaining
+                      </p>
+                    </div>
+                    <Calendar className={`h-8 w-8 ${getExpiryStatus(selectedMedicine.expiry_date).color}`} />
+                  </div>
+                  <div className="mt-2">
+                    <span className={`text-sm font-medium ${getExpiryStatus(selectedMedicine.expiry_date).color}`}>
+                      {getExpiryStatus(selectedMedicine.expiry_date).status}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Location */}
+                <div className="p-4 rounded-lg border bg-blue-50">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Location</p>
+                      <p className="text-lg font-bold text-gray-900">{selectedMedicine.location}</p>
+                      <p className="text-sm text-gray-500">Storage facility</p>
+                    </div>
+                    <MapPin className="h-8 w-8 text-blue-600" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Detailed Information */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Product Information */}
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <FileText className="h-5 w-5 mr-2" />
+                    Product Information
+                  </h4>
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Medicine Name:</span>
+                      <span className="font-medium text-gray-900">{selectedMedicine.name}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Batch ID:</span>
+                      <span className="font-mono text-gray-900">{selectedMedicine.batch_id}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Manufacturer:</span>
+                      <span className="font-medium text-gray-900">{selectedMedicine.manufacturer}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Status:</span>
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(selectedMedicine.status)}`}>
+                        {selectedMedicine.status.replace('_', ' ')}
+                      </span>
+                    </div>
+                    {selectedMedicine.price && selectedMedicine.price > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Unit Price:</span>
+                        <span className="font-medium text-gray-900">${selectedMedicine.price}</span>
+                      </div>
+                    )}
+                    {selectedMedicine.description && (
+                      <div>
+                        <span className="text-gray-600">Description:</span>
+                        <p className="text-gray-900 mt-1">{selectedMedicine.description}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Stock Analytics */}
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <TrendingUp className="h-5 w-5 mr-2" />
+                    Stock Analytics
+                  </h4>
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Current Quantity:</span>
+                      <span className="font-bold text-gray-900">{selectedMedicine.quantity.toLocaleString()} units</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Stock Level:</span>
+                      <span className={`font-medium ${getStockStatus(selectedMedicine.quantity).color}`}>
+                        {getStockStatus(selectedMedicine.quantity).status}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Days Until Expiry:</span>
+                      <span className={`font-medium ${getExpiryStatus(selectedMedicine.expiry_date).color}`}>
+                        {getDaysUntilExpiry(selectedMedicine.expiry_date)} days
+                      </span>
+                    </div>
+                    {selectedMedicine.price && selectedMedicine.price > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Total Value:</span>
+                        <span className="font-bold text-green-600">
+                          ${(selectedMedicine.quantity * selectedMedicine.price).toLocaleString()}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Last Updated:</span>
+                      <span className="text-gray-900">
+                        {new Date(selectedMedicine.updated_at).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Added On:</span>
+                      <span className="text-gray-900">
+                        {new Date(selectedMedicine.created_at).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Stock Recommendations */}
+              <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <h4 className="text-lg font-semibold text-blue-900 mb-3">📊 Stock Recommendations</h4>
+                <div className="space-y-2 text-blue-800">
+                  {selectedMedicine.quantity < 10 && (
+                    <div className="flex items-center space-x-2">
+                      <AlertTriangle className="h-4 w-4 text-red-600" />
+                      <span className="text-red-700 font-medium">Critical: Immediate reorder required</span>
+                    </div>
+                  )}
+                  {selectedMedicine.quantity < 50 && selectedMedicine.quantity >= 10 && (
+                    <div className="flex items-center space-x-2">
+                      <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                      <span className="text-yellow-700 font-medium">Low stock: Consider reordering soon</span>
+                    </div>
+                  )}
+                  {getDaysUntilExpiry(selectedMedicine.expiry_date) <= 30 && getDaysUntilExpiry(selectedMedicine.expiry_date) > 0 && (
+                    <div className="flex items-center space-x-2">
+                      <Clock className="h-4 w-4 text-orange-600" />
+                      <span className="text-orange-700 font-medium">Expiring soon: Use or redistribute first</span>
+                    </div>
+                  )}
+                  {getDaysUntilExpiry(selectedMedicine.expiry_date) < 0 && (
+                    <div className="flex items-center space-x-2">
+                      <X className="h-4 w-4 text-red-600" />
+                      <span className="text-red-700 font-medium">Expired: Remove from circulation immediately</span>
+                    </div>
+                  )}
+                  {selectedMedicine.quantity >= 100 && getDaysUntilExpiry(selectedMedicine.expiry_date) > 30 && (
+                    <div className="flex items-center space-x-2">
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                      <span className="text-green-700 font-medium">Optimal stock levels maintained</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="mt-6 flex justify-end space-x-3">
+                <button
+                  onClick={() => {
+                    handleEdit(selectedMedicine);
+                    closeDetailsModal();
+                  }}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+                >
+                  <Edit className="h-4 w-4" />
+                  <span>Edit Medicine</span>
+                </button>
+                <button
+                  onClick={closeDetailsModal}
+                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Active Alerts */}
       {alerts.length > 0 && (
