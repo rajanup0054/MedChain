@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Package, TrendingUp, AlertTriangle, MapPin, Activity, Clock, Plus, Edit, Trash2, Triangle as ExclamationTriangle, Eye, X, Calendar, Building, User, Barcode, DollarSign, FileText } from 'lucide-react';
+import { Package, TrendingUp, AlertTriangle, MapPin, Activity, Clock, Plus, Edit, Trash2, Triangle as ExclamationTriangle, Eye, X, Calendar, Building, User, Barcode, DollarSign, FileText, CheckCircle } from 'lucide-react';
 import { useMedicines, useLocations, useAlerts } from '../hooks/useSupabase';
 import { Medicine } from '../lib/supabase';
 
@@ -421,19 +421,43 @@ const Dashboard: React.FC = () => {
               {filteredMedicines.map((medicine) => (
                 <tr key={medicine.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="font-medium text-gray-900">{medicine.name}</div>
+                    <div 
+                      className="font-medium text-gray-900 cursor-pointer hover:text-blue-600 transition-colors"
+                      onClick={() => handleViewDetails(medicine)}
+                      title="Click to view details"
+                    >
+                      {medicine.name}
+                    </div>
                     <div className="text-sm text-gray-500">{medicine.manufacturer}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {medicine.batch_id}
+                    <span 
+                      className="font-mono cursor-pointer hover:text-blue-600 transition-colors"
+                      onClick={() => handleViewDetails(medicine)}
+                      title="Click to view details"
+                    >
+                      {medicine.batch_id}
+                    </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {medicine.quantity.toLocaleString()}
+                    <span 
+                      className="cursor-pointer hover:text-blue-600 transition-colors"
+                      onClick={() => handleViewDetails(medicine)}
+                      title="Click to view stock details"
+                    >
+                      {medicine.quantity.toLocaleString()}
+                    </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center text-sm text-gray-900">
                       <MapPin className="h-4 w-4 text-gray-400 mr-1" />
-                      {medicine.location}
+                      <span 
+                        className="cursor-pointer hover:text-blue-600 transition-colors"
+                        onClick={() => handleViewDetails(medicine)}
+                        title="Click to view details"
+                      >
+                        {medicine.location}
+                      </span>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -442,7 +466,13 @@ const Dashboard: React.FC = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {new Date(medicine.expiry_date).toLocaleDateString()}
+                    <span 
+                      className="cursor-pointer hover:text-blue-600 transition-colors"
+                      onClick={() => handleViewDetails(medicine)}
+                      title="Click to view expiry details"
+                    >
+                      {new Date(medicine.expiry_date).toLocaleDateString()}
+                    </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
