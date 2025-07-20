@@ -1,12 +1,44 @@
 import React, { useState, useEffect } from 'react';
 import { Package, TrendingUp, AlertTriangle, MapPin, Activity, Clock, Plus, Edit, Trash2, Triangle as ExclamationTriangle, Eye, X, Calendar, Building, User, Barcode, DollarSign, FileText, CheckCircle } from 'lucide-react';
 import { useMedicines, useLocations, useAlerts } from '../hooks/useSupabase';
-import { Medicine } from '../lib/supabase';
+import { Medicine, supabase } from '../lib/supabase';
 
 const Dashboard: React.FC = () => {
   const { medicines, loading: medicinesLoading, addMedicine, updateMedicine, deleteMedicine, error: medicinesError } = useMedicines();
   const { locations, error: locationsError } = useLocations();
   const { alerts, error: alertsError } = useAlerts();
+  
+  // Test Supabase connection
+  useEffect(() => {
+    const testConnection = async () => {
+      try {
+        if (supabase) {
+          const { data, error } = await supabase.from('medicines').select('count', { count: 'exact' });
+          console.log('Supabase Connection Test:', { data, error, count: data });
+        } else {
+          console.log('Supabase client is null - check configuration');
+        }
+      } catch (err) {
+        console.error('Supabase connection test failed:', err);
+      }
+    };
+    testConnection();
+  }, []);
+  
+  // Debug logging
+  console.log('Dashboard Debug Info:', {
+    medicines,
+    medicinesCount: medicines.length,
+    medicinesLoading,
+    medicinesError,
+    locations,
+    locationsCount: locations.length,
+    locationsError,
+    alerts,
+    alertsCount: alerts.length,
+    alertsError
+  });
+  
   const [selectedLocation, setSelectedLocation] = useState('all');
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingMedicine, setEditingMedicine] = useState<Medicine | null>(null);
